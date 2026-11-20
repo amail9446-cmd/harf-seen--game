@@ -289,7 +289,7 @@ function show(v){["vStart","vLobby","vTeacher","vKid","vFinish"].forEach(id=>$(i
 const kidLink=code=>location.origin+location.pathname+"?c="+code;
 
 /* =================== TEACHER =================== */
-const T={code:null,phase:"lobby",q:0,rev:false,stars:{},awarded:{},kids:{}};
+const T={classPick:-1,code:null,phase:"lobby",q:0,rev:false,stars:{},awarded:{},kids:{}};
 function tSave(){store.set("hs-teacher",{code:T.code,phase:T.phase,q:T.q,rev:T.rev,stars:T.stars,awarded:T.awarded})}
 function newCode(){return String(Math.floor(10000+Math.random()*90000))}
 function tState(){return{s:Date.now(),phase:T.phase,q:T.q,rev:T.rev,stars:T.stars}}
@@ -311,9 +311,10 @@ function tRender(){
   $("tNum").textContent="السؤال "+(T.q+1)+" من "+Q.length;
   $("tProg").innerHTML="";Q.forEach((_,i)=>{const e=document.createElement("i");if(i<T.q)e.className="done";if(i===T.q)e.className="now";$("tProg").appendChild(e)});
   $("tPrompt").textContent=q.p;
-  if($("tOpts").dataset.q!=T.q){buildOpts($("tOpts"),q,null);$("tOpts").dataset.q=T.q}
+  if($("tOpts").dataset.q!=T.q){buildOpts($("tOpts"),q,tClassPick);$("tOpts").dataset.q=T.q}
   const kids=kidList();const tally=[0,0,0];kids.forEach(k=>{if(k.q===T.q&&k.pick>=0)tally[k.pick]++});
-  paintOpts($("tOpts"),q,{revealed:T.rev,tally});
+  if(!T.rev)T.classPick=-1;
+  paintOpts($("tOpts"),q,{picked:T.rev?T.classPick:-1,revealed:T.rev,tally});
   const answered=kids.filter(k=>k.q===T.q&&k.pick>=0).length,right=kids.filter(k=>k.q===T.q&&k.pick===q.a).length;
   $("tStatus").className="status"+(T.rev?" good":"");
   $("tStatus").textContent=T.rev?("الإجابة الصحيحة: "+q.o[q.a][1]+(kids.length?" — أصاب "+right+" من "+kids.length:"")):(kids.length?("أجاب "+answered+" من "+kids.length):"");
@@ -324,7 +325,9 @@ function tFinishRender(){show("vFinish");const b=$("board");b.innerHTML="";const
   kids.forEach(k=>{const li=document.createElement("li");const n=document.createElement("span");n.textContent=k.nick||"طفل";const s=document.createElement("span");s.textContent="⭐ "+(T.stars[k.id]||0);li.append(n,s);b.appendChild(li)})}
 function tReveal(){if(T.rev)return;T.rev=true;const q=Q[T.q],key=String(T.q);T.awarded[key]=T.awarded[key]||{};
   kidList().forEach(k=>{if(k.q===T.q&&k.pick===q.a&&!T.awarded[key][k.id]){T.awarded[key][k.id]=1;T.stars[k.id]=(T.stars[k.id]||0)+1}});
-  tone(true);burst();speak("الإجابة الصحيحة: "+q.o[q.a][1]);tPublish();tRender()}
+  const miss=T.classPick>=0&&T.classPick!==q.a;if(miss)tone(false);else{tone(true);burst()}speak((T.classPick===q.a?"أحسنت! ":"")+"الإجابة الصحيحة: "+q.o[q.a][1]);tPublish();tRender()}
+/* a click on the teacher's own screen (e.g. a child using Teams "Give control") answers for the class */
+function tClassPick(i){if(T.rev)return;T.classPick=i;tReveal()}
 function tGo(d){const n=T.q+d;if(n<0)return;if(n>=Q.length){T.phase="done";tPublish();tRender();burst();tone(true);return}T.q=n;T.rev=false;tPublish();tRender();speak(sayText(Q[T.q]))}
 function startTeacher(){const saved=store.get("hs-teacher");
   if(saved&&saved.code){Object.assign(T,saved)}else{T.code=newCode();T.phase="lobby";T.q=0;T.rev=false;T.stars={};T.awarded={}}

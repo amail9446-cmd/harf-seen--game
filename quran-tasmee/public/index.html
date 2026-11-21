@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>سباق سورة العصر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Baloo+Bhaijaan+2:wght@500;700;800&display=swap">
+<style>
+/* VOICE: joyful, loud colours, almost no reading needed — five-year-olds listen, repeat, cheer
+   IDEA: a toy race track on a sunny playmat; a kind sheikh recites, the child repeats, the car leaps
+   PICTURE: the track plus a big animated sheikh whose mouth moves while reciting, and a child who takes the turn
+   COLOUR and TYPE: sun yellow ground, asphalt + grass, coral and sky cars; Baloo Bhaijaan 2 for play, Amiri for ayat
+   LAYOUT: title, track, then one stage card: character on one side, giant icon buttons on the other; stacks on phones */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffd23f,#1c1838);--bg2:light-dark(#fff1b8,#2a2552);
+--ink:light-dark(#2b2118,#fff6e0);--card:light-dark(#fffdf6,#2f2a5c);--line:light-dark(#f0d9a0,#463f80);
+--road:#3a3d4a;--grass:#5dbb46;--coral:#ff5a5f;--sky:#2b86e9;--gold:#ffb703;--ok:#2fae5b;--plum:#8e5bd8}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.6 "Baloo Bhaijaan 2",system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(16px,3vw,32px) max(4vw,12px)}
+.wrap{max-width:1000px;margin:0 auto}
+h1{font-size:clamp(28px,5vw,46px);line-height:1.1;margin:0;text-wrap:balance;font-weight:800}
+.top{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:inherit;cursor:pointer;border:0}
+button:focus-visible,label:focus-within{outline:4px solid var(--sky);outline-offset:3px}
+.pill{min-height:44px;padding:4px 16px;border-radius:999px;background:var(--card);box-shadow:0 3px 0 var(--line);font-weight:700;font-size:16px}
+/* track */
+.track{margin-top:14px;background:var(--grass);border-radius:26px;padding:14px 12px 8px;box-shadow:inset 0 -8px 0 rgba(0,0,0,.12),0 8px 0 rgba(0,0,0,.08)}
+.lane{position:relative;height:84px;background:var(--road);border-radius:16px;margin-bottom:10px;overflow:hidden;
+ background-image:linear-gradient(90deg,#fff 50%,transparent 0);background-size:34px 4px;background-repeat:repeat-x;background-position:0 50%}
+.lane::after{content:"";position:absolute;inset-block:0;inset-inline-end:0;width:46px;background:conic-gradient(#fff 25%,#222 0 50%,#fff 0 75%,#222 0) 0 0/16px 16px}
+.tag{position:absolute;top:4px;inset-inline-start:10px;font-size:14px;font-weight:700;color:#fff;background:rgba(0,0,0,.35);padding:0 10px;border-radius:99px;z-index:2}
+.car{position:absolute;bottom:6px;width:86px;height:50px;inset-inline-start:calc((100% - 150px) * var(--p,0) / 8 + 8px);transition:inset-inline-start .9s cubic-bezier(.3,1.5,.5,1);z-index:3}
+.car svg{width:100%;height:100%;display:block}
+.car.hop svg{animation:hop .6s}
+@keyframes hop{40%{transform:translateY(-14px) rotate(4deg)}}
+.trophy{position:absolute;inset-inline-end:58px;top:50%;translate:0 -50%;width:58px;height:66px}
+.ruler{display:flex;justify-content:space-between;padding:0 8px 0 150px}
+.ruler span{width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.18);display:grid;place-items:center}
+.ruler span.on{background:var(--gold)}
+.ruler svg{width:16px;height:16px;fill:#fff}
+/* stage */
+.card{background:var(--card);border-radius:28px;padding:clamp(16px,3vw,30px);box-shadow:0 8px 0 var(--line);margin-top:6px}
+.stage{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(14px,3vw,30px);align-items:center}
+.who{position:relative;background:var(--bg2);border-radius:26px;aspect-ratio:1/1;max-height:340px;display:grid;place-items:center;overflow:hidden}
+.who>svg{width:86%;height:86%}
+.mouth{transform-origin:100px 132px;transform:scaleY(.35)}
+.talk .mouth{animation:talk .32s infinite alternate}
+@keyframes talk{to{transform:scaleY(1)}}
+.wave{opacity:0}.talk .wave{animation:wave 1.2s infinite}.talk .wave.w2{animation-delay:.4s}
+@keyframes wave{0%{opacity:0;transform:scale(.8)}40%{opacity:1}100%{opacity:0;transform:scale(1.15)}}
+.kid .arm{animation:wav .5s infinite alternate;transform-origin:150px 150px}
+@keyframes wav{to{transform:rotate(-18deg)}}
+.badge{position:absolute;top:10px;inset-inline-start:10px;font-weight:800;font-size:17px;color:#fff;padding:2px 14px;border-radius:99px}
+.step{font-weight:800;font-size:clamp(22px,3.4vw,30px);line-height:1.25;margin:0 0 8px}
+.ayah{font-family:Amiri,serif;font-size:clamp(24px,4vw,34px);line-height:2;text-align:center;padding:8px 14px;border-radius:18px;background:var(--bg2);margin:0 0 14px;transition:filter .3s;cursor:pointer}
+.ayah.hid{filter:blur(12px)}
+.ayah .no{color:var(--coral);font-size:.8em}
+.acts{display:grid;gap:12px}
+.big{display:flex;align-items:center;justify-content:center;gap:12px;min-height:80px;padding:8px 22px;border-radius:24px;color:#fff;font-size:clamp(24px,3.6vw,30px);font-weight:800;box-shadow:0 7px 0 #0003;transition:transform .1s}
+.big:active{transform:translateY(5px);box-shadow:0 2px 0 #0003}
+.big svg{width:44px;height:44px;fill:#fff;flex:none}
+.big[disabled]{cursor:default;opacity:.95}
+.b-listen{background:var(--sky)}.b-say{background:var(--coral)}.b-ok{background:var(--ok)}.b-again{background:var(--plum)}
+.pulse{animation:pulse 1s infinite}
+@keyframes pulse{50%{transform:scale(1.04)}}
+.meter{position:relative;height:44px;border-radius:99px;background:var(--bg2);overflow:hidden;display:grid;place-items:center;font-weight:800;font-size:18px}
+.meter i{position:absolute;inset-block:0;inset-inline-start:0;width:0;background:#ffb703;animation:fill linear forwards}
+.meter span{position:relative}
+@keyframes fill{to{width:100%}}
+.b-ok[disabled]{background:#b8b8b8;box-shadow:0 7px 0 #0002;opacity:1;cursor:not-allowed}
+.heard{min-height:30px;font-family:Amiri,serif;font-size:20px;text-align:center;opacity:.8}
+.verdict{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:4px;color:#fff;font-size:44px;font-weight:800;animation:pop .4s}
+.verdict small{font:400 18px/1.5 Amiri,serif;padding:0 14px;text-align:center}
+.verdict svg{width:120px;height:120px;fill:#fff}.v-ok{background:#2fae5bee}.v-no{background:#ff5a5fee}.v-mid{background:#8a8f9cee}
+.ayah .w.bad{color:var(--coral);text-decoration:underline wavy;text-underline-offset:10px}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+.micnote{margin:10px 0 0;padding:8px 16px;border-radius:16px;background:var(--card);font-weight:700;font-size:16px}
+.micnote.ok{color:var(--ok)}.micnote.no{color:#d23a3f}
+.judge{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.small{background:none;text-decoration:underline;font-size:16px;min-height:44px;opacity:.8}
+.msg{min-height:38px;font-size:24px;font-weight:800;text-align:center}
+.msg.good{color:var(--ok)}.msg.try{color:var(--plum)}
+.note{font-size:14px;opacity:.75;margin:6px 0 0}
+.center{text-align:center}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+.stars{display:flex;justify-content:center;gap:8px;margin:6px 0}.stars svg{width:64px;height:64px}
+.ov{position:fixed;inset:0;background:#0008;display:none;place-items:center;padding:14px;z-index:20;overflow:auto}
+.ov.show{display:grid}.ov .card{max-width:640px;width:100%}
+.slot{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:12px 0;border-bottom:2px dashed var(--line)}
+.slot .t{font-family:Amiri,serif;font-size:22px;line-height:1.6}
+.slot .st{font-size:15px;font-weight:700}.slot .st.y{color:var(--ok)}
+.file{display:inline-flex;align-items:center;min-height:44px;padding:4px 16px;border-radius:14px;background:var(--sky);color:#fff;font-weight:700;cursor:pointer;font-size:16px}
+.file input{position:absolute;opacity:0;width:1px;height:1px}
+.slot a{color:var(--sky);font-size:15px;font-weight:700}
+.scene{position:relative;height:clamp(250px,44vw,400px);border-radius:18px;overflow:hidden;background:linear-gradient(#8fd8ff,#d9f4ff);margin-bottom:8px}
+.scene canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
+.track.three .ruler{padding:0 8px}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:30;width:100%;height:100%}
+@media(max-width:600px){.lane{height:70px}.car{width:68px;height:40px;inset-inline-start:calc((100% - 120px) * var(--p,0) / 8 + 6px)}
+ .trophy{width:44px;height:50px;inset-inline-end:52px}.ruler{padding-inline-start:110px}.ruler span{width:20px;height:20px}.ruler svg{width:12px;height:12px}
+ .stage{grid-template-columns:1fr}.who{max-height:230px;aspect-ratio:auto;height:230px}.big{min-height:72px}.modes{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.car{transition:none}*{animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="carS" viewBox="0 0 86 50">
+  <ellipse cx="44" cy="46" rx="38" ry="3.5" fill="#0004"/>
+  <path d="M4 34Q4 25 14 23L26 21 36 9H60Q66 9 70 15L76 23Q82 25 82 32V38H4Z" fill="currentColor"/>
+  <path d="M30 22 38 12H50V22Z M54 22V12H60Q63 12 66 16L70 22Z" fill="#cfefff"/>
+  <path d="M8 28H20" stroke="#ffe27a" stroke-width="4" stroke-linecap="round"/>
+  <g fill="#222"><circle cx="22" cy="38" r="8"/><circle cx="66" cy="38" r="8"/></g>
+  <g fill="#ddd"><circle cx="22" cy="38" r="3.5"/><circle cx="66" cy="38" r="3.5"/></g>
+ </symbol>
+ <symbol id="starS" viewBox="0 0 24 24"><path d="M12 2l3 6.6 7.2.8-5.4 4.9 1.5 7.1L12 17.8 5.7 21.4l1.5-7.1L1.8 9.4 9 8.6z"/></symbol>
+ <symbol id="earS" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></symbol>
+ <symbol id="micS" viewBox="0 0 24 24"><path d="M12 15a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v7a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V22h2v-3.1A7 7 0 0 0 19 12z"/></symbol>
+ <symbol id="okS" viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></symbol>
+ <symbol id="noS" viewBox="0 0 24 24"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></symbol>
+ <symbol id="agS" viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></symbol>
+ <symbol id="trophyS" viewBox="0 0 58 66"><path d="M14 6H44V20Q44 38 29 40 14 38 14 20Z" fill="#ffb703"/><path d="M14 10H4Q4 26 16 28M44 10H54Q54 26 42 28" stroke="#ffb703" stroke-width="4" fill="none"/><rect x="25" y="40" width="8" height="10" fill="#e09b00"/><rect x="14" y="50" width="30" height="10" rx="3" fill="#8a5a12"/><path d="M21 12V22" stroke="#fff8" stroke-width="4" stroke-linecap="round"/></symbol>
+ <symbol id="sheikhS" viewBox="0 0 200 200">
+  <path d="M30 200Q34 150 100 146 166 150 170 200Z" fill="#f4f1ea"/>
+  <path d="M38 98Q30 40 100 30 170 40 162 98L170 190Q150 150 100 150 50 150 30 190Z" fill="#fff"/>
+  <g fill="#e0473f" opacity=".85"><path d="M46 80 60 60 74 80 60 100Z M86 50 100 36 114 50 100 64Z M126 80 140 60 154 80 140 100Z"/></g>
+  <ellipse cx="100" cy="100" rx="44" ry="50" fill="#f0c59a"/>
+  <path d="M56 104Q60 168 100 172 140 168 144 104Q134 126 120 122 100 116 80 122 66 126 56 104Z" fill="#fafafa"/>
+  <path d="M58 70Q100 46 142 70L142 60Q100 34 58 60Z" fill="#fff"/>
+  <path d="M60 66Q100 44 140 66" stroke="#222" stroke-width="5" fill="none"/>
+  <path d="M74 96q9-7 18 0M108 96q9-7 18 0" stroke="#4a3428" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M74 84q9-5 18-1M108 83q9-4 18 1" stroke="#ddd" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <ellipse cx="68" cy="114" rx="7" ry="5" fill="#f7a99a" opacity=".6"/><ellipse cx="132" cy="114" rx="7" ry="5" fill="#f7a99a" opacity=".6"/>
+  <ellipse class="mouth" cx="100" cy="132" rx="11" ry="9" fill="#7a2f2a"/>
+  <g class="wave" fill="none" stroke="#2b86e9" stroke-width="5" stroke-linecap="round"><path d="M22 110q-10 -20 0 -40"/><path d="M178 110q10 -20 0 -40"/></g>
+  <g class="wave w2" fill="none" stroke="#2b86e9" stroke-width="5" stroke-linecap="round"><path d="M10 120q-14 -30 0 -60"/><path d="M190 120q14 -30 0 -60"/></g>
+ </symbol>
+ <symbol id="kidS" viewBox="0 0 200 200">
+  <path d="M44 200Q48 150 100 146 152 150 156 200Z" fill="#ff5a5f"/>
+  <g class="arm"><path d="M150 168Q176 140 168 112" stroke="#f0c59a" stroke-width="16" stroke-linecap="round" fill="none"/><circle cx="168" cy="108" r="12" fill="#f0c59a"/></g>
+  <circle cx="100" cy="98" r="50" fill="#f0c59a"/>
+  <path d="M50 92Q52 44 100 44 148 44 150 92Q136 66 100 64 66 66 50 92Z" fill="#4a3428"/>
+  <circle cx="82" cy="100" r="7" fill="#2b2118"/><circle cx="118" cy="100" r="7" fill="#2b2118"/>
+  <circle cx="84" cy="97" r="2.5" fill="#fff"/><circle cx="120" cy="97" r="2.5" fill="#fff"/>
+  <ellipse cx="68" cy="118" rx="8" ry="5" fill="#f7a99a"/><ellipse cx="132" cy="118" rx="8" ry="5" fill="#f7a99a"/>
+  <ellipse class="mouth" cx="100" cy="128" rx="12" ry="10" fill="#7a2f2a" style="transform-origin:100px 128px"/>
+  <g fill="#ffb703"><use href="#starS" x="14" y="20" width="34" height="34"/><use href="#starS" x="156" y="30" width="26" height="26"/></g>
+ </symbol>
+</svg>
+
+<header class="band"><div class="wrap">
+ <div class="top">
+  <h1>احفظ سورة العصر وانطلق نحو الفوز</h1>
+  <div class="tools"><button class="pill" id="micBtn">تفعيل المايك</button><button class="pill" id="setBtn">تلاوة الشيخ</button><button class="pill" id="sndBtn" aria-pressed="true">الأصوات: تعمل</button></div>
+ </div>
+ <p class="micnote" id="micNote" hidden></p>
+ <div class="track" id="track"></div>
+</div></header>
+
+<main class="band" style="padding-top:0"><div class="wrap"><div class="card" id="stage"></div></div></main>
+
+<div class="ov" id="ov"><div class="card">
+ <p class="step" style="margin-bottom:0">تلاوة الشيخ (للمعلمة)</p>
+ <p class="note">تلاوة الشيخ مشاري العفاسي مضافة إلى اللعبة. اضغطي «تجربة» لسماع كل آية، أو اختاري ملفًا آخر لتغيير القارئ على هذا الجهاز.</p>
+ <div id="slots"></div>
+ <p class="note">دون ملفات صوت تعمل اللعبة أيضًا: يتحرك الشيخ وتقرأ المعلمة الآية بصوتها.</p>
+ <div style="display:flex;justify-content:center;margin-top:14px"><button class="big b-listen" id="closeOv" style="min-height:60px">تم</button></div>
+</div></div>
+<canvas id="fx"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+{
+const AY=['وَالْعَصْرِ','إِنَّ الْإِنسَانَ لَفِي خُسْرٍ','إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ'];
+const AR=n=>String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
+const txt=ks=>ks.map(k=>`${AY[k].split(' ').map((w,i)=>`<span class="w" data-v="${k+1}" data-w="${i+1}">${w}</span>`).join(' ')} <span class="no">﴿${AR(k+1)}﴾</span>`).join(' ');
+const FALLBACK=[3500,5000,11000];
+/* steps: learn = sheikh recites then child repeats; next = sheikh recites one, child continues with the next; solo = child alone */
+const S=[
+ {k:'learn',play:[0],say:[0],t:'الآية الأولى'},
+ {k:'learn',play:[1],say:[1],t:'الآية الثانية'},
+ {k:'learn',play:[0,1],say:[0,1],t:'الآيتان معًا'},
+ {k:'learn',play:[2],say:[2],t:'الآية الثالثة'},
+ {k:'next',play:[0],say:[1],t:'تحدٍّ: الشيخ يبدأ وأنت تكمل'},
+ {k:'next',play:[1],say:[2],t:'تحدٍّ: كمّل بعد الشيخ'},
+ {k:'solo',play:[],say:[0],t:'تحدٍّ: ابدأ السورة وحدك'},
+ {k:'solo',play:[],say:[0,1,2],t:'السورة كاملة وحدك'}
+];
+const N=S.length;
+const TEAMS=[{name:'فريق النجوم',hex:'#ff5a5f'},{name:'فريق الأقمار',hex:'#2b86e9'}];
+let mode=1,teams=[],turn=0,busy=false,sound=true,actx=null,timer=0,player=new Audio();
+const clips=['aud/103001.mp3','aud/103002.mp3','aud/103003.mp3'];
+try{for(let i=0;i<3;i++){const v=localStorage.getItem('asr-clip-'+i);if(v)clips[i]=v}}catch(e){}
+const DUR=FALLBACK.map(x=>x/1000);
+clips.forEach((u,i)=>{const a=new Audio();a.preload='auto';a.onloadedmetadata=()=>{if(isFinite(a.duration)&&a.duration>0)DUR[i]=a.duration};a.src=u});
+const $=id=>document.getElementById(id),stage=$('stage'),track=$('track');
+
+function tone(seq){if(!sound)return;try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();let t=actx.currentTime;
+ seq.forEach(([f,d])=>{const o=actx.createOscillator(),g=actx.createGain();o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(.2,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(actx.destination);o.start(t);o.stop(t+d);t+=d*.8})}catch(e){}}
+const yay=()=>tone([[523,.15],[659,.15],[784,.15],[1047,.35]]),soft=()=>tone([[440,.2],[392,.3]]),vroom=()=>tone([[120,.1],[160,.1],[220,.1],[300,.2]]);
+
+/* ---------- 3D world ---------- */
+const STEP=6;let W3=null;
+function init3D(){
+ if(!window.THREE)return null;
+ try{
+  const T=THREE,r=new T.WebGLRenderer({antialias:true});
+  r.setPixelRatio(Math.min(devicePixelRatio||1,2));r.shadowMap.enabled=true;
+  const sc=new T.Scene();sc.background=new T.Color('#9fe0ff');sc.fog=new T.Fog('#9fe0ff',30,90);
+  const cam=new T.PerspectiveCamera(50,2,.1,200);
+  sc.add(new T.HemisphereLight('#ffffff','#5dbb46',.75));
+  const sun=new T.DirectionalLight('#fff4d6',.9);sun.position.set(10,20,8);sun.castShadow=true;
+  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-20,right:20,top:20,bottom:-20,far:80});sc.add(sun);sc.add(sun.target);
+  const M=c=>new T.MeshLambertMaterial({color:c});
+  const L=N*STEP+16;
+  const grass=new T.Mesh(new T.PlaneGeometry(120,L+80),M('#5dbb46'));grass.rotation.x=-Math.PI/2;grass.position.z=-L/2+6;grass.receiveShadow=true;sc.add(grass);
+  const road=new T.Mesh(new T.PlaneGeometry(8,L),M('#3a3d4a'));road.rotation.x=-Math.PI/2;road.position.set(0,.01,-L/2+8);road.receiveShadow=true;sc.add(road);
+  for(let z=6;z>-L+8;z-=2.4){const d=new T.Mesh(new T.BoxGeometry(.18,.02,1.2),M('#ffffff'));d.position.set(0,.02,z);sc.add(d)}
+  [-4.1,4.1].forEach(x=>{for(let z=6;z>-L+8;z-=1.2){const c=new T.Mesh(new T.BoxGeometry(.3,.12,1.2),M(Math.round(z/1.2)%2?'#ff5a5f':'#ffffff'));c.position.set(x,.06,z);sc.add(c)}});
+  // checkered finish
+  const cv=document.createElement('canvas');cv.width=128;cv.height=32;const g=cv.getContext('2d');
+  for(let x=0;x<16;x++)for(let y=0;y<4;y++){g.fillStyle=(x+y)%2?'#222':'#fff';g.fillRect(x*8,y*8,8,8)}
+  const tex=new T.CanvasTexture(cv);const fz=-N*STEP;
+  const fin=new T.Mesh(new T.PlaneGeometry(8,2),new T.MeshLambertMaterial({map:tex}));fin.rotation.x=-Math.PI/2;fin.position.set(0,.03,fz);sc.add(fin);
+  [-4.3,4.3].forEach(x=>{const p=new T.Mesh(new T.CylinderGeometry(.18,.18,4.4,12),M('#ffffff'));p.position.set(x,2.2,fz);p.castShadow=true;sc.add(p)});
+  const ban=new T.Mesh(new T.BoxGeometry(9,1,.2),[M('#ffb703'),M('#ffb703'),M('#ffb703'),M('#ffb703'),new T.MeshLambertMaterial({map:tex}),new T.MeshLambertMaterial({map:tex})]);ban.position.set(0,4.2,fz);sc.add(ban);
+  // trophy
+  const gold=new T.MeshPhongMaterial({color:'#ffc21a',shininess:90,specular:'#fff3b0'});
+  const tro=new T.Group();
+  const cup=new T.Mesh(new T.LatheGeometry([[0,0],[.25,0],[.12,.25],[.12,.6],[.7,.9],[.85,1.7],[.8,1.75]].map(p=>new T.Vector2(p[0],p[1])),24),gold);cup.position.y=.6;
+  const base=new T.Mesh(new T.BoxGeometry(1.1,.5,1.1),M('#8a5a12'));base.position.y=.35;
+  [-1,1].forEach(s=>{const h=new T.Mesh(new T.TorusGeometry(.32,.07,8,16,Math.PI),gold);h.position.set(s*.85,1.85,0);h.rotation.z=s>0?-Math.PI/2:Math.PI/2;tro.add(h)});
+  tro.add(cup,base);tro.children.forEach(m=>m.castShadow=true);tro.position.set(0,0,fz-5);tro.scale.setScalar(1.4);sc.add(tro);
+  const ped=new T.Mesh(new T.CylinderGeometry(1.4,1.6,.6,24),M('#2b86e9'));ped.position.set(0,.3,fz-5);sc.add(ped);tro.position.y=.6;
+  // trees and clouds
+  for(let i=0;i<46;i++){const side=i%2?1:-1,x=side*(6+Math.random()*14),z=8-Math.random()*(L+30);
+   const tr=new T.Group(),tk=new T.Mesh(new T.CylinderGeometry(.18,.25,1,8),M('#8a5a12'));tk.position.y=.5;
+   const top=new T.Mesh(Math.random()<.5?new T.ConeGeometry(1,2.2,8):new T.SphereGeometry(1,10,8),M(['#2f9e44','#3fb24f','#64c95a'][i%3]));top.position.y=1.9;
+   tr.add(tk,top);tr.children.forEach(m=>m.castShadow=true);tr.position.set(x,0,z);tr.scale.setScalar(.8+Math.random()*.7);sc.add(tr)}
+  const clouds=[];for(let i=0;i<9;i++){const c=new T.Group();for(let j=0;j<4;j++){const s=new T.Mesh(new T.SphereGeometry(1+Math.random(),10,8),new T.MeshLambertMaterial({color:'#ffffff'}));s.position.set(j*1.4,Math.random()*.6,Math.random());c.add(s)}
+   c.position.set(-30+Math.random()*60,12+Math.random()*6,-Math.random()*L-10);sc.add(c);clouds.push(c)}
+  const starShape=new T.Shape();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,rr=i%2?.22:.5;i?starShape.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):starShape.moveTo(Math.cos(a)*rr,Math.sin(a)*rr)}
+  const starGeo=new T.ExtrudeGeometry(starShape,{depth:.12,bevelEnabled:true,bevelSize:.04,bevelThickness:.04,bevelSegments:1});
+  const host=document.createElement('div');host.className='scene';host.appendChild(r.domElement);
+  W3={T,r,sc,cam,sun,tro,clouds,starGeo,gold,M,host,cars:[],camZ:4,win:false,t0:performance.now()};
+  new ResizeObserver(()=>{const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}).observe(host);
+  requestAnimationFrame(loop3D);return W3;
+ }catch(e){return null}
+}
+function makeCar(hex,x){
+ const {T,M,sc,starGeo,gold}=W3,g=new T.Group();
+ const body=new T.Mesh(new T.BoxGeometry(1.5,.55,2.6),M(hex));body.position.y=.55;
+ const cab=new T.Mesh(new T.BoxGeometry(1.2,.5,1.3),M('#cfefff'));cab.position.set(0,1.05,.25);
+ const roof=new T.Mesh(new T.BoxGeometry(1.26,.12,1.36),M(hex));roof.position.set(0,1.34,.25);
+ const spoil=new T.Mesh(new T.BoxGeometry(1.5,.08,.35),M('#ffb703'));spoil.position.set(0,1.05,1.25);
+ g.add(body,cab,roof,spoil);
+ [-.5,.5].forEach(sx=>{const hl=new T.Mesh(new T.BoxGeometry(.3,.15,.05),new T.MeshBasicMaterial({color:'#fff7b0'}));hl.position.set(sx,.62,-1.31);g.add(hl)});
+ const wheels=[];[[-.78,-.85],[.78,-.85],[-.78,.85],[.78,.85]].forEach(([wx,wz])=>{const w=new T.Mesh(new T.CylinderGeometry(.34,.34,.26,16),M('#222'));w.rotation.z=Math.PI/2;w.position.set(wx,.34,wz);g.add(w);wheels.push(w)});
+ g.children.forEach(m=>m.castShadow=true);g.position.set(x,0,0);sc.add(g);
+ const coins=[];for(let i=1;i<=N;i++){const s=new T.Mesh(starGeo,gold);s.position.set(x,1.2,-i*STEP);s.castShadow=true;sc.add(s);coins.push({m:s,got:false,fly:0})}
+ return {g,wheels,z:0,tz:0,hop:0,coins,x};
+}
+function setLanes(lanes){
+ const {sc}=W3;W3.cars.forEach(c=>{sc.remove(c.g);c.coins.forEach(k=>sc.remove(k.m))});
+ const xs=lanes.length>1?[1.9,-1.9]:[0];W3.cars=lanes.map((t,i)=>makeCar(t.hex,xs[i]));W3.camZ=4;W3.win=false;
+}
+function loop3D(now){
+ requestAnimationFrame(loop3D);if(!W3||!W3.host.isConnected)return;
+ const {r,sc,cam,tro,clouds,cars}=W3,t=(now-W3.t0)/1000;
+ cars.forEach(c=>{const dz=(c.tz-c.z)*.06;c.z+=dz;c.g.position.z=c.z;c.wheels.forEach(w=>w.rotation.x-=dz*3);
+  c.hop=Math.max(0,c.hop-.025);c.g.position.y=Math.sin(c.hop*Math.PI)*.8;c.g.rotation.x=-Math.sin(c.hop*Math.PI)*.12;
+  c.coins.forEach(k=>{if(!k.got&&c.z<k.m.position.z+.4){k.got=true;tone([[1200,.08],[1600,.12]])}
+   if(k.got){k.fly+=.03;k.m.position.y=1.2+k.fly*4;k.m.scale.setScalar(Math.max(.01,1-k.fly));k.m.visible=k.fly<1}
+   k.m.rotation.y=t*2.5});});
+ tro.rotation.y=t*.8;clouds.forEach((c,i)=>c.position.x+=.004*(i%2?1:-1));
+ if(W3.win){const fz=-N*STEP-5,a=t*.4;cam.position.set(Math.sin(a)*9,5,fz+Math.cos(a)*9);cam.lookAt(0,1.6,fz)}
+ else{const lead=cars.length?Math.min(...cars.map(c=>c.z)):0;W3.camZ+=(lead+8-W3.camZ)*.05;cam.position.set(0,5.2,W3.camZ);cam.lookAt(0,.6,W3.camZ-14)}
+ W3.sun.position.set(10,20,W3.camZ);W3.sun.target.position.set(0,0,W3.camZ-10);
+ r.render(sc,cam);
+}
+function drawTrack(){
+ const lanes=teams.length?teams:[{name:'سيارتي',hex:'#ff5a5f',pos:0}];
+ if(W3||init3D()){track.classList.add('three');track.innerHTML='';track.appendChild(W3.host);
+  const ru=document.createElement('div');ru.className='ruler';ru.innerHTML=S.map((_,i)=>`<span id="m${i}"><svg><use href="#starS"/></svg></span>`).join('');track.appendChild(ru);
+  setLanes(lanes);markRuler();return}
+ track.innerHTML=lanes.map((t,i)=>`<div class="lane"><span class="tag">${t.name}</span><svg class="trophy" aria-hidden="true"><use href="#trophyS"/></svg>
+  <div class="car" id="car${i}" style="--p:${t.pos||0};color:${t.hex}"><svg><use href="#carS"/></svg></div></div>`).join('')
+ +`<div class="ruler">${S.map((_,i)=>`<span id="m${i}"><svg><use href="#starS"/></svg></span>`).join('')}</div>`;
+ markRuler();
+}
+function markRuler(){const p=teams.length?Math.max(...teams.map(t=>t.pos)):0;S.forEach((_,i)=>{const m=$('m'+i);if(m)m.classList.toggle('on',i<p)})}
+function moveCar(i){if(W3&&W3.cars[i]){const c=W3.cars[i];c.tz=-teams[i].pos*STEP;c.hop=1;markRuler();return}const c=$('car'+i);if(!c)return;c.style.setProperty('--p',teams[i].pos);c.classList.remove('hop');void c.offsetWidth;c.classList.add('hop');markRuler()}
+
+function home(){
+ teams=[];drawTrack();stopAudio();
+ stage.innerHTML=`<div class="stage"><div class="who" id="who"><svg><use href="#sheikhS"/></svg></div>
+ <div><p class="step">اسمع الشيخ، ردّد الآية، وانطلق بسيارتك!</p>
+ <div class="modes"><button class="big b-say" id="one">لاعب واحد</button><button class="big b-listen" id="two">فريقان</button></div>
+ <p class="note">${clips.some(Boolean)?'تلاوة الشيخ جاهزة.':'لإضافة صوت الشيخ اضغطي «تلاوة الشيخ» في الأعلى.'} ٨ نجوم حتى الكأس.</p></div></div>`;
+ $('one').onclick=()=>start(1);$('two').onclick=()=>start(2);
+}
+function start(m){mode=m;turn=0;teams=(m===1?[{name:'سيارتي',hex:'#ff5a5f'}]:TEAMS).map(t=>({...t,pos:0,miss:0}));drawTrack();vroom();ask()}
+
+function stopAudio(){clearTimeout(timer);try{player.pause()}catch(e){}player.onended=null}
+function playSeq(list,done){
+ let i=0;const who=$('who');who.classList.add('talk');
+ const next=()=>{if(i>=list.length){who.classList.remove('talk');return done()}
+  const k=list[i++];
+  if(clips[k]){player.src=clips[k];player.onended=()=>setTimeout(next,350);player.play().catch(()=>{timer=setTimeout(next,FALLBACK[k])})}
+  else timer=setTimeout(next,FALLBACK[k])};
+ next();
+}
+function ask(){
+ busy=false;gen++;stopAudio();endSess();
+ const T=teams[turn],s=S[T.pos],c=T.hex;
+ const badge=mode===2?`<span class="badge" style="background:${c}">${T.name}</span>`:`<span class="badge" style="background:var(--coral)">${AR(T.pos+1)} / ${AR(N)}</span>`;
+ const show=s.k==='learn'?s.play:s.say;
+ stage.innerHTML=`<div class="stage"><div class="who" id="who">${badge}<svg id="fig"><use href="#${s.k==='solo'?'kidS':'sheikhS'}"/></svg></div>
+ <div><p class="step">${s.t}</p>
+ <div class="ayah${s.k==='learn'?'':' hid'}" id="ay" title="اضغطي لإظهار النص">${txt(show)}</div>
+ <div class="acts" id="acts"></div><div class="msg" id="msg"></div></div></div>`;
+ $('ay').onclick=()=>$('ay').classList.toggle('hid');
+ s.k==='solo'?sayPhase():listenPhase();
+}
+function listenPhase(){
+ const s=S[teams[turn].pos];
+ $('acts').innerHTML=`<button class="big b-listen pulse" id="lis"><svg><use href="#earS"/></svg><span>استمع للشيخ</span></button>`;
+ $('lis').onclick=()=>{const b=$('lis');b.disabled=true;b.classList.remove('pulse');b.querySelector('span').textContent='جاري التلاوة...';
+  playSeq(s.play,()=>{
+   $('acts').innerHTML=`<button class="big b-say pulse" id="say"><svg><use href="#micS"/></svg>${s.k==='next'?'كمّلها أنت':'ردّدها'}</button>
+   <button class="small" id="rep">اسمع مرة أخرى</button>`;
+   $('say').onclick=sayPhase;$('rep').onclick=listenPhase});
+ };
+}
+function sayPhase(){
+ stopAudio();silenceAll();const s=S[teams[turn].pos];
+ $('fig').innerHTML='<use href="#kidS"/>';const who=$('who');who.classList.add('kid','talk');who.querySelectorAll('.verdict').forEach(v=>v.remove());
+ if(s.k==='learn')$('ay').classList.add('hid');
+ $('msg').className='msg';$('msg').textContent='دورك! ردّد بصوت عالٍ';
+ if(!manualOnly&&canRecord()&&CFG.serviceConfigured)return micPhase(s);
+ manualPhase(s);
+}
+/* ---------- recording + recitation check ----------
+   The child's voice is recorded only after the sheikh's audio has stopped, converted to
+   16 kHz mono WAV, and sent to our own server (/api/evaluate). The server holds the Nabr key,
+   sends the audio to Nabr's recitation grader and deletes it. No browser speech recognition. */
+let manualOnly=false,sess=null,micStream=null,gen=0,CFG={autoLights:false,serviceConfigured:false,aspects:{}};
+fetch('/api/config',{cache:'no-store'}).then(r=>r.json()).then(c=>{CFG=c}).catch(()=>{});
+const esc=t=>String(t).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const canRecord=()=>!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&(window.AudioContext||window.webkitAudioContext));
+function silenceAll(){try{player.pause();player.currentTime=0;player.removeAttribute('src');player.load()}catch(e){}try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}}
+function getMic(){
+ if(micStream&&micStream.active)return Promise.resolve(micStream);
+ return navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}})
+  .then(st=>micStream=st).catch(e=>{throw{code:e&&(e.name==='NotAllowedError'||e.name==='SecurityError')?'not_granted':'unavailable'}})}
+function releaseMic(){if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null}}
+function toWav(chunks,n,rate){
+ const all=new Float32Array(n);let o=0;chunks.forEach(c=>{all.set(c,o);o+=c.length;c.fill(0)});
+ const ratio=Math.max(1,rate/16000),len=Math.floor(n/ratio),pcm=new Int16Array(len);
+ for(let i=0;i<len;i++){const a=Math.floor(i*ratio),b=Math.max(a+1,Math.min(n,Math.floor((i+1)*ratio)));let x=0;for(let j=a;j<b;j++)x+=all[j];
+  const v=Math.max(-1,Math.min(1,x/(b-a)));pcm[i]=v<0?v*0x8000:v*0x7fff}
+ all.fill(0);
+ const buf=new ArrayBuffer(44+len*2),dv=new DataView(buf),w=(p,t)=>{for(let i=0;i<t.length;i++)dv.setUint8(p+i,t.charCodeAt(i))};
+ w(0,'RIFF');dv.setUint32(4,36+len*2,true);w(8,'WAVE');w(12,'fmt ');dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);
+ dv.setUint32(24,16000,true);dv.setUint32(28,32000,true);dv.setUint16(32,2,true);dv.setUint16(34,16,true);w(36,'data');dv.setUint32(40,len*2,true);
+ new Int16Array(buf,44).set(pcm);pcm.fill(0);return new Blob([buf],{type:'audio/wav'})}
+/* records until the child is quiet for ~2 s after speaking, the button is pressed again, or maxMs */
+function record(maxMs,onTick){
+ return getMic().then(stream=>new Promise(resolve=>{
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const src=ctx.createMediaStreamSource(stream),proc=ctx.createScriptProcessor(4096,1,1),mute=ctx.createGain();mute.gain.value=0;
+  const rate=ctx.sampleRate,chunks=[],t0=performance.now();let n=0,heard=false,quiet=0,stopped=false;
+  const stop=cancel=>{if(stopped)return;stopped=true;clearTimeout(cap);clearInterval(tick);try{proc.disconnect();src.disconnect()}catch(e){}ctx.close().catch(()=>{});releaseMic();
+   if(cancel){chunks.forEach(c=>c.fill(0));return resolve({cancelled:true})}
+   resolve({wav:toWav(chunks,n,rate),heard})};
+  proc.onaudioprocess=e=>{if(stopped)return;if(performance.now()-t0<250)return; // skip the button click / any echo tail
+   const d=e.inputBuffer.getChannelData(0);chunks.push(new Float32Array(d));n+=d.length;
+   let p=0;for(let i=0;i<d.length;i++)p+=d[i]*d[i];const db=10*Math.log10(p/d.length+1e-12);
+   if(db>-45){heard=true;quiet=0}else if(heard){quiet+=d.length/rate*1000;if(quiet>2200)stop()}};
+  src.connect(proc);proc.connect(mute);mute.connect(ctx.destination);
+  const cap=setTimeout(()=>stop(),maxMs),tick=setInterval(()=>onTick&&onTick((performance.now()-t0)/1000),500);
+  sess={stop};
+ }));
+}
+function endSess(){clearTimeout(timer);if(sess){const x=sess;sess=null;x.stop(true)}}
+function micPhase(s){
+ const need=Math.max(3,s.say.reduce((a,k)=>a+DUR[k],0));
+ $('acts').innerHTML=`<button class="big b-say pulse" id="mic"><svg><use href="#micS"/></svg><span>اضغط وردّد</span></button>
+ <div class="heard" id="heard"></div><button class="small" id="man">تصحيح يدوي</button>`;
+ $('man').onclick=()=>{endSess();manualPhase(s)};
+ $('mic').onclick=()=>{
+  if(sess){sess.stop();return} // second press: the child has finished
+  const b=$('mic'),g=gen;if(b.dataset.on)return;b.dataset.on=1;
+  silenceAll();b.classList.remove('pulse');b.querySelector('span').textContent='أسمعك الآن... اضغط عندما تنتهي';
+  record((need*2+4)*1000,t=>{const h=$('heard');if(h&&g===gen)h.textContent='🎙️ '+AR(Math.floor(t))})
+   .then(r=>{sess=null;if(r.cancelled||g!==gen)return;checkRec(s,r,g)})
+   .catch(e=>{sess=null;if(g!==gen)return;manualOnly=true;
+    say(e&&e.code==='not_granted'?'لم يُسمح بالمايك، تصحّح المعلمة':'المايك غير متاح، تصحّح المعلمة','try');manualPhase(s)});
+ };
+}
+function checkRec(s,r,g){
+ $('who').classList.remove('talk');
+ if(!r.heard)return unclear(s,'لم أسمع صوتك، اقترب من الجهاز وحاول مرة أخرى');
+ $('acts').innerHTML=`<div class="meter"><i style="animation-duration:8s"></i><span>نتحقق من قراءتك...</span></div>`;
+ const from=Math.min(...s.say)+1,to=Math.max(...s.say)+1,ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),200000);
+ fetch(`/api/evaluate?from=${from}&to=${to}&step=${teams[turn].pos+1}`,{method:'POST',headers:{'Content-Type':'audio/wav'},body:r.wav,signal:ctl.signal,cache:'no-store'})
+  .then(x=>x.ok?x.json():Promise.reject(x.status))
+  .then(res=>{clearTimeout(t);if(g===gen)result(s,res)})
+  .catch(()=>{clearTimeout(t);if(g===gen)unclear(s,'تعذّر الوصول إلى المصحّح الآن')});
+}
+function result(s,res){
+ if(!res.autoLights){ // calibration not approved yet: the teacher decides, the result goes to her panel
+  manualPhase(s,true,'المصحّح الآلي في وضع الاختبار؛ تحكم المعلمة. التفاصيل في لوحة المعلمة.');return}
+ if(res.light==='green'){verdict('ok');good();return}
+ if(res.light==='red'&&res.wrongWords&&res.wrongWords.length){verdict('no');fix(s,res);return}
+ unclear(s,res.unclear?'لم أسمعك جيدًا، ردّدها بصوت أوضح':'لم أتأكد من قراءتك، نحاول مرة أخرى');
+}
+function verdict(kind,small=''){
+ const who=$('who');if(!who)return;who.classList.remove('talk');who.querySelectorAll('.verdict').forEach(v=>v.remove());
+ const v=document.createElement('div');v.className='verdict '+{ok:'v-ok',no:'v-no',mid:'v-mid'}[kind];
+ v.innerHTML=`<svg><use href="#${kind==='ok'?'okS':kind==='no'?'noS':'micS'}"/></svg><b>${kind==='ok'?'صح':kind==='no'?'نصحّحها معًا':'لم أتأكد'}</b>${small?`<small>${esc(small)}</small>`:''}`;who.appendChild(v);
+}
+const ENC=['محاولة جميلة!','أنت قريب جدًا!','نتعلّمها معًا'];
+function fix(s,res){
+ teams[turn].miss++;oops2();
+ const ay=$('ay');ay.classList.remove('hid');
+ const isBad=w=>res.wrongWords.some(x=>x.verse==w.dataset.v&&x.word==w.dataset.w);
+ ay.querySelectorAll('.w').forEach(w=>w.classList.toggle('bad',isBad(w)));
+ const names=res.wrongWords.map(x=>x.text).filter(Boolean).slice(0,2);
+ say(`${ENC[Math.floor(Math.random()*ENC.length)]} ${names.length?'كلمة «'+names.join('» و«')+'» تحتاج تصحيحًا':''}`,'try');
+ const vs=[...new Set(res.wrongWords.map(x=>x.verse-1))].filter(k=>k>=0&&k<AY.length),seg=vs.length?vs:s.say,g=gen;
+ $('acts').innerHTML=`<button class="big b-listen pulse" id="lis"><svg><use href="#earS"/></svg><span>اسمع الشيخ</span></button>`;
+ const playFix=()=>{const b=$('lis');if(!b||g!==gen)return;b.disabled=true;b.classList.remove('pulse');b.querySelector('span').textContent='جاري التلاوة...';
+  $('who').querySelectorAll('.verdict').forEach(v=>v.remove());$('who').classList.remove('kid');$('fig').innerHTML='<use href="#sheikhS"/>';
+  playSeq(seg,()=>{if(g!==gen)return;
+   $('acts').innerHTML=`<button class="big b-again pulse" id="retry"><svg><use href="#agS"/></svg>حاول مرة أخرى</button><button class="small" id="rep">اسمع مرة أخرى</button>`;
+   $('retry').onclick=()=>{ay.querySelectorAll('.bad').forEach(w=>w.classList.remove('bad'));sayPhase()};
+   $('rep').onclick=()=>{$('acts').innerHTML=`<button class="big b-listen" id="lis" disabled><svg><use href="#earS"/></svg><span>جاري التلاوة...</span></button>`;playFix()}})};
+ $('lis').onclick=playFix;setTimeout(()=>{const b=$('lis');if(b&&!b.disabled&&g===gen)playFix()},1800);
+}
+function unclear(s,msg){
+ soft();verdict('mid',msg);say(msg,'try');
+ $('acts').innerHTML=`<button class="big b-say pulse" id="retry"><svg><use href="#micS"/></svg>حاول مرة أخرى</button><button class="small" id="man">تصحيح يدوي</button>`;
+ $('retry').onclick=()=>sayPhase();$('man').onclick=()=>{$('who').querySelectorAll('.verdict').forEach(v=>v.remove());manualPhase(s,true)};
+}
+function T_miss(){teams[turn].miss++}
+const oops2=()=>tone([[330,.18],[262,.18],[196,.35]]);
+function manualPhase(s,done,note){
+ const need=done?0.05:Math.max(3,s.say.reduce((a,k)=>a+DUR[k],0)*.9);
+ $('acts').innerHTML=`<div class="meter"><i id="bar" style="animation-duration:${need}s"></i><span id="mt">الطفل يقرأ الآن...</span></div>
+ <div class="judge"><button class="big b-ok" id="ok" disabled aria-label="ردّدها صحيحًا"><svg><use href="#okS"/></svg>صح</button>
+ <button class="big b-again" id="ag" aria-label="نحاول مرة أخرى"><svg><use href="#agS"/></svg>مرة أخرى</button></div>
+ <p class="note center" id="jn">يُفتح زر «صح» بعد أن ينهي الطفل القراءة</p>`;
+ const ok=$('ok');ok.onclick=good;$('ag').onclick=()=>{clearTimeout(timer);again()};
+ timer=setTimeout(()=>{ok.disabled=false;ok.classList.add('pulse');$('mt').textContent='انتهى وقت القراءة';$('jn').textContent=note||'تضغط المعلمة «صح» إذا ردّدها الطفل صحيحًا';$('who').classList.remove('talk')},need*1000);
+}
+const PRAISE=['أحسنت! انطلق','ما شاء الله!','بطل! إلى الأمام','رائع جدًا!'];
+function say(t,c){const m=$('msg');m.textContent=t;m.className='msg '+c}
+function good(){
+ if(busy)return;busy=true;const T=teams[turn];$('who').classList.remove('talk');
+ yay();vroom();say(PRAISE[Math.floor(Math.random()*PRAISE.length)],'good');$('ay').classList.remove('hid');
+ T.pos++;moveCar(turn);burst(30);
+ setTimeout(()=>{if(T.pos>=N)return win(T);if(mode===2)turn=1-turn;ask()},1800);
+}
+function again(){
+ if(busy)return;const T=teams[turn];T.miss++;soft();$('who').classList.remove('talk','kid');
+ if(mode===2){busy=true;say('محاولة جميلة! الدور للفريق الآخر','try');setTimeout(()=>{turn=1-turn;ask()},2200)}
+ else{say('لا بأس، نسمعها مرة أخرى','try');setTimeout(ask,1500)}
+}
+function win(T){
+ tone([[523,.2],[659,.2],[784,.2],[1047,.2],[784,.15],[1047,.5]]);burst(180);if(W3)setTimeout(()=>{W3.win=true},900);
+ const st=mode===1?(T.miss===0?3:T.miss<=3?2:1):3;
+ stage.innerHTML=`<div class="center">
+  <svg style="width:110px;height:124px"><use href="#trophyS"/></svg>
+  <p class="step" style="font-size:clamp(30px,5vw,42px)">${mode===2?'فاز '+T.name+'!':'وصلت إلى الكأس!'}</p>
+  <div class="stars">${[0,1,2].map(i=>`<svg style="fill:${i<st?'#ffb703':'#0002'}"><use href="#starS"/></svg>`).join('')}</div>
+  <p class="step" style="font-size:22px">أنت بطل سورة العصر</p>
+  <div class="ayah" style="cursor:default">${txt([0,1,2])}</div>
+  <div class="modes" style="max-width:560px;margin:0 auto"><button class="big b-say" id="againB"><svg><use href="#agS"/></svg>العب مرة أخرى</button><button class="big b-listen" id="homeB">البداية</button></div></div>`;
+ $('againB').onclick=()=>start(mode);$('homeB').onclick=home;
+}
+/* recitation setup */
+const NAMES=['الآية الأولى','الآية الثانية','الآية الثالثة'];
+function drawSlots(){
+ $('slots').innerHTML=AY.map((a,i)=>`<div class="slot"><div><div class="t">${a}</div>
+  <span class="st${clips[i]?' y':''}">${clips[i]?'تمت إضافة التلاوة':'لا يوجد صوت بعد'}</span> ·
+  <a href="https://everyayah.com/data/Alafasy_128kbps/10300${i+1}.mp3" target="_blank" rel="noopener">تحميل ${NAMES[i]}</a></div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><label class="file">اختيار ملف<input type="file" accept="audio/*" data-i="${i}"></label>
+  ${clips[i]?`<button class="pill" data-t="${i}">تجربة</button>`:''}</div></div>`).join('');
+ $('slots').querySelectorAll('input').forEach(inp=>inp.onchange=()=>{const f=inp.files[0];if(!f)return;const i=+inp.dataset.i,r=new FileReader();
+  r.onload=()=>{clips[i]=r.result;try{localStorage.setItem('asr-clip-'+i,r.result)}catch(e){}drawSlots()};r.readAsDataURL(f)});
+ $('slots').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{stopAudio();player.src=clips[+b.dataset.t];player.play().catch(()=>{})});
+}
+function micNote(t,ok){const n=$('micNote');n.hidden=false;n.textContent=t;n.className='micnote '+(ok?'ok':'no')}
+const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
+$('micBtn').onclick=()=>{
+ if(!canRecord()){micNote(isIOS?'المايك غير متاح هنا. افتحي الرابط في Safari.':'المايك غير متاح في هذا المتصفح. افتحي الرابط في Chrome.',false);return}
+ micNote('اضغطي «سماح» عندما يطلب الجهاز إذن المايك...',true);
+ getMic().then(()=>{releaseMic();manualOnly=false;$('micBtn').textContent='المايك جاهز';
+  micNote(!CFG.serviceConfigured?'المايك جاهز، لكن مصحّح التلاوة غير مضبوط على الخادم بعد؛ سيبقى التصحيح يدويًا.':
+   CFG.autoLights?'المايك جاهز! يُرسل صوت الطفل إلى مصحّح التلاوة ثم يُحذف.':'المايك جاهز. المصحّح الآلي في وضع الاختبار حتى تعتمده المعلمة، والتصحيح الآن يدوي.',true)})
+ .catch(e=>{manualOnly=true;
+  micNote(e&&e.code==='not_granted'?'تم رفض إذن المايك. افتحي إعدادات المتصفح ← أذونات الموقع ← الميكروفون واختاري «سماح»، ثم أعيدي فتح اللعبة.':'تعذّر تشغيل المايك هنا. سيبقى التصحيح يدويًا.',false)})};
+$('setBtn').onclick=()=>{stopAudio();drawSlots();$('ov').classList.add('show')};
+$('closeOv').onclick=()=>{stopAudio();$('ov').classList.remove('show');if(!teams.length)home()};
+$('sndBtn').onclick=()=>{sound=!sound;const b=$('sndBtn');b.textContent='الأصوات: '+(sound?'تعمل':'مغلقة');b.setAttribute('aria-pressed',sound)};
+/* confetti */
+const fx=$('fx'),cx=fx.getContext('2d');let parts=[],raf=0;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function burst(n){if(reduce)return;fx.width=innerWidth;fx.height=innerHeight;
+ for(let i=0;i<n;i++)parts.push({x:innerWidth/2,y:innerHeight*.35,vx:(Math.random()-.5)*14,vy:-Math.random()*12-4,s:6+Math.random()*7,c:['#ff5a5f','#2b86e9','#ffb703','#5dbb46','#8e5bd8'][i%5],r:Math.random()*6,l:90+Math.random()*40});
+ if(!raf)raf=requestAnimationFrame(step)}
+function step(){cx.clearRect(0,0,fx.width,fx.height);parts=parts.filter(p=>p.l-->0);
+ parts.forEach(p=>{p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.r+=.2;cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);cx.restore()});
+ raf=parts.length?requestAnimationFrame(step):0;if(!raf)cx.clearRect(0,0,fx.width,fx.height)}
+home();
+}
+</script>
+</body>
+</html>

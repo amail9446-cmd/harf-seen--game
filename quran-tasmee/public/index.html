@@ -75,7 +75,8 @@ button:focus-visible,label:focus-within{outline:4px solid var(--sky);outline-off
 .heard{min-height:30px;font-family:Amiri,serif;font-size:20px;text-align:center;opacity:.8}
 .verdict{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:4px;color:#fff;font-size:44px;font-weight:800;animation:pop .4s}
 .verdict small{font:400 18px/1.5 Amiri,serif;padding:0 14px;text-align:center}
-.verdict svg{width:120px;height:120px;fill:#fff}.v-ok{background:#2fae5bee}.v-no{background:#ff5a5fee}
+.verdict svg{width:120px;height:120px;fill:#fff}.v-ok{background:#2fae5bee}.v-no{background:#ff5a5fee}.v-mid{background:#8a8f9cee}
+.ayah .w.bad{color:var(--coral);text-decoration:underline wavy;text-underline-offset:10px}
 @keyframes pop{from{transform:scale(.6);opacity:0}}
 .micnote{margin:10px 0 0;padding:8px 16px;border-radius:16px;background:var(--card);font-weight:700;font-size:16px}
 .micnote.ok{color:var(--ok)}.micnote.no{color:#d23a3f}
@@ -175,7 +176,7 @@ button:focus-visible,label:focus-within{outline:4px solid var(--sky);outline-off
 {
 const AY=['وَالْعَصْرِ','إِنَّ الْإِنسَانَ لَفِي خُسْرٍ','إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ'];
 const AR=n=>String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
-const txt=ks=>ks.map(k=>`${AY[k]} <span class="no">﴿${AR(k+1)}﴾</span>`).join(' ');
+const txt=ks=>ks.map(k=>`${AY[k].split(' ').map((w,i)=>`<span class="w" data-v="${k+1}" data-w="${i+1}">${w}</span>`).join(' ')} <span class="no">﴿${AR(k+1)}﴾</span>`).join(' ');
 const FALLBACK=[3500,5000,11000];
 /* steps: learn = sheikh recites then child repeats; next = sheikh recites one, child continues with the next; solo = child alone */
 const S=[
@@ -313,7 +314,7 @@ function playSeq(list,done){
  next();
 }
 function ask(){
- busy=false;stopAudio();endSess();
+ busy=false;gen++;stopAudio();endSess();
  const T=teams[turn],s=S[T.pos],c=T.hex;
  const badge=mode===2?`<span class="badge" style="background:${c}">${T.name}</span>`:`<span class="badge" style="background:var(--coral)">${AR(T.pos+1)} / ${AR(N)}</span>`;
  const show=s.k==='learn'?s.play:s.say;
@@ -335,90 +336,126 @@ function listenPhase(){
  };
 }
 function sayPhase(){
- stopAudio();const s=S[teams[turn].pos];
- $('fig').innerHTML='<use href="#kidS"/>';const who=$('who');who.classList.add('kid','talk');
+ stopAudio();silenceAll();const s=S[teams[turn].pos];
+ $('fig').innerHTML='<use href="#kidS"/>';const who=$('who');who.classList.add('kid','talk');who.querySelectorAll('.verdict').forEach(v=>v.remove());
  if(s.k==='learn')$('ay').classList.add('hid');
  $('msg').className='msg';$('msg').textContent='دورك! ردّد بصوت عالٍ';
- if(DICT&&!manualOnly)return micPhase(s);
+ if(!manualOnly&&canRecord()&&CFG.serviceConfigured)return micPhase(s);
  manualPhase(s);
 }
-/* ---------- microphone check ---------- */
-let DICT=null,manualOnly=false,sess=null;
-function bindDict(d){DICT=d;
- d.onPartial(({text})=>{if(sess){sess.part=text;check()}});
- d.onFinal(({text})=>{if(sess){sess.text+=text;sess.part='';check()}});
- d.onState(({state})=>{if(sess)$('who')&&$('who').classList.toggle('talk',state==='listening')})}
-/* browser speech recognition (Chrome on Android, Safari on iPhone) with the same shape as Claude's dictation */
-function makeSR(){
- const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;
- let rec=null,on=false,P=[],F=[],S=[],endWait=null;const emit=(L,v)=>L.forEach(h=>{try{h(v)}catch(e){}});
- return{
-  start(opt){return new Promise((res,rej)=>{
-   try{rec=new SR();rec.lang='ar-SA';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1}catch(e){return rej({code:'unavailable'})}
-   let started=false;
-   rec.onstart=()=>{started=true;on=true;emit(S,{state:'listening'});res()};
-   rec.onresult=e=>{let fin='',part='';for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;e.results[i].isFinal?fin+=' '+t:part+=t}
-    if(fin)emit(F,{text:fin});emit(P,{text:part})};
-   rec.onerror=e=>{const c=(e.error==='not-allowed'||e.error==='service-not-allowed')?'not_granted':e.error==='no-speech'?'no_speech':'upstream_error';
-    if(!started)rej({code:c})};
-   rec.onend=()=>{on=false;emit(S,{state:'idle',reason:'stopped'});if(endWait){endWait();endWait=null}};
-   try{rec.start()}catch(e){rej({code:'upstream_error'})}})},
-  stop(){return new Promise(r=>{if(!rec||!on)return r();endWait=r;try{rec.stop()}catch(e){r()}setTimeout(r,1500)})},
-  active(){return on},
-  onPartial(h){P.push(h);return()=>{}},onFinal(h){F.push(h);return()=>{}},onState(h){S.push(h);return()=>{}}};
+/* ---------- recording + recitation check ----------
+   The child's voice is recorded only after the sheikh's audio has stopped, converted to
+   16 kHz mono WAV, and sent to our own server (/api/evaluate). The server holds the Nabr key,
+   sends the audio to Nabr's recitation grader and deletes it. No browser speech recognition. */
+let manualOnly=false,sess=null,micStream=null,gen=0,CFG={autoLights:false,serviceConfigured:false,aspects:{}};
+fetch('/api/config',{cache:'no-store'}).then(r=>r.json()).then(c=>{CFG=c}).catch(()=>{});
+const esc=t=>String(t).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const canRecord=()=>!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&(window.AudioContext||window.webkitAudioContext));
+function silenceAll(){try{player.pause();player.currentTime=0;player.removeAttribute('src');player.load()}catch(e){}try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}}
+function getMic(){
+ if(micStream&&micStream.active)return Promise.resolve(micStream);
+ return navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}})
+  .then(st=>micStream=st).catch(e=>{throw{code:e&&(e.name==='NotAllowedError'||e.name==='SecurityError')?'not_granted':'unavailable'}})}
+function releaseMic(){if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null}}
+function toWav(chunks,n,rate){
+ const all=new Float32Array(n);let o=0;chunks.forEach(c=>{all.set(c,o);o+=c.length;c.fill(0)});
+ const ratio=Math.max(1,rate/16000),len=Math.floor(n/ratio),pcm=new Int16Array(len);
+ for(let i=0;i<len;i++){const a=Math.floor(i*ratio),b=Math.max(a+1,Math.min(n,Math.floor((i+1)*ratio)));let x=0;for(let j=a;j<b;j++)x+=all[j];
+  const v=Math.max(-1,Math.min(1,x/(b-a)));pcm[i]=v<0?v*0x8000:v*0x7fff}
+ all.fill(0);
+ const buf=new ArrayBuffer(44+len*2),dv=new DataView(buf),w=(p,t)=>{for(let i=0;i<t.length;i++)dv.setUint8(p+i,t.charCodeAt(i))};
+ w(0,'RIFF');dv.setUint32(4,36+len*2,true);w(8,'WAVE');w(12,'fmt ');dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);
+ dv.setUint32(24,16000,true);dv.setUint32(28,32000,true);dv.setUint16(32,2,true);dv.setUint16(34,16,true);w(36,'data');dv.setUint32(40,len*2,true);
+ new Int16Array(buf,44).set(pcm);pcm.fill(0);return new Blob([buf],{type:'audio/wav'})}
+/* records until the child is quiet for ~2 s after speaking, the button is pressed again, or maxMs */
+function record(maxMs,onTick){
+ return getMic().then(stream=>new Promise(resolve=>{
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const src=ctx.createMediaStreamSource(stream),proc=ctx.createScriptProcessor(4096,1,1),mute=ctx.createGain();mute.gain.value=0;
+  const rate=ctx.sampleRate,chunks=[],t0=performance.now();let n=0,heard=false,quiet=0,stopped=false;
+  const stop=cancel=>{if(stopped)return;stopped=true;clearTimeout(cap);clearInterval(tick);try{proc.disconnect();src.disconnect()}catch(e){}ctx.close().catch(()=>{});releaseMic();
+   if(cancel){chunks.forEach(c=>c.fill(0));return resolve({cancelled:true})}
+   resolve({wav:toWav(chunks,n,rate),heard})};
+  proc.onaudioprocess=e=>{if(stopped)return;if(performance.now()-t0<250)return; // skip the button click / any echo tail
+   const d=e.inputBuffer.getChannelData(0);chunks.push(new Float32Array(d));n+=d.length;
+   let p=0;for(let i=0;i<d.length;i++)p+=d[i]*d[i];const db=10*Math.log10(p/d.length+1e-12);
+   if(db>-45){heard=true;quiet=0}else if(heard){quiet+=d.length/rate*1000;if(quiet>2200)stop()}};
+  src.connect(proc);proc.connect(mute);mute.connect(ctx.destination);
+  const cap=setTimeout(()=>stop(),maxMs),tick=setInterval(()=>onTick&&onTick((performance.now()-t0)/1000),500);
+  sess={stop};
+ }));
 }
-{const sr=makeSR();if(sr)bindDict(sr)}
-function getDict(){try{if(window.claude&&claude.use)claude.use('dictation').then(d=>{if(d&&!window.__cdBound){window.__cdBound=1;manualOnly=false;bindDict(d);if(!teams.length)home()}}).catch(()=>{})}catch(e){}}
-getDict();addEventListener('load',getDict);
-const norm=s=>s.replace(/[ً-ٰٟۖ-ۭـ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/[^ء-ي\s]/g,' ').trim();
-function lev(a,b){const d=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){let p=d[0];d[0]=i;for(let j=1;j<=b.length;j++){const t=d[j];d[j]=Math.min(d[j]+1,d[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return d[b.length]}
-const sim=(a,b)=>1-lev(a,b)/Math.max(a.length,b.length,1);
-const words=t=>norm(t).split(/\s+/).filter(Boolean);
-const same=(a,b)=>a===b||(Math.max(a.length,b.length)>=7&&sim(a,b)>=.85);
-/* strict: every word of the ayah, in order (extra words before/after are allowed, e.g. the isti'adha) */
-function pass(spoken,target){
- const tw=words(target),sw=words(spoken);if(!sw.length)return false;
- if(sw.join('').includes(tw.join('')))return true;
- let j=0;for(const w of tw){let hit=false;
-  while(j<sw.length){if(same(sw[j],w)){j++;hit=true;break}if(j+1<sw.length&&same(sw[j]+sw[j+1],w)){j+=2;hit=true;break}j++}
-  if(!hit)return false}
- return true}
-function check(){if(!sess||sess.done)return;const h=$('heard');if(h)h.textContent=(sess.text+' '+sess.part).trim();
- if(pass(sess.text+' '+sess.part,sess.target))return finish();
- clearTimeout(sess.sil);if((sess.text+sess.part).trim())sess.sil=setTimeout(finish,3200)}
+function endSess(){clearTimeout(timer);if(sess){const x=sess;sess=null;x.stop(true)}}
 function micPhase(s){
  const need=Math.max(3,s.say.reduce((a,k)=>a+DUR[k],0));
  $('acts').innerHTML=`<button class="big b-say pulse" id="mic"><svg><use href="#micS"/></svg><span>اضغط وردّد</span></button>
  <div class="heard" id="heard"></div><button class="small" id="man">تصحيح يدوي</button>`;
  $('man').onclick=()=>{endSess();manualPhase(s)};
  $('mic').onclick=()=>{
-  if(sess)return;sess={text:'',part:'',done:false,target:s.say.map(k=>AY[k]).join(' ')};
-  const b=$('mic');b.classList.remove('pulse');b.disabled=true;b.querySelector('span').textContent='أسمعك الآن...';
-  DICT.start({language:'ar'}).then(()=>{timer=setTimeout(finish,(need*1.8+3)*1000)}).catch(e=>{sess=null;
-   if(e&&e.code==='dismissed'){b.disabled=false;b.querySelector('span').textContent='اضغط وردّد';return}
-   manualOnly=true;say('المايك غير متاح، تصحّح المعلمة','try');manualPhase(s)});
+  if(sess){sess.stop();return} // second press: the child has finished
+  const b=$('mic'),g=gen;if(b.dataset.on)return;b.dataset.on=1;
+  silenceAll();b.classList.remove('pulse');b.querySelector('span').textContent='أسمعك الآن... اضغط عندما تنتهي';
+  record((need*2+4)*1000,t=>{const h=$('heard');if(h&&g===gen)h.textContent='🎙️ '+AR(Math.floor(t))})
+   .then(r=>{sess=null;if(r.cancelled||g!==gen)return;checkRec(s,r,g)})
+   .catch(e=>{sess=null;if(g!==gen)return;manualOnly=true;
+    say(e&&e.code==='not_granted'?'لم يُسمح بالمايك، تصحّح المعلمة':'المايك غير متاح، تصحّح المعلمة','try');manualPhase(s)});
  };
 }
-function endSess(){clearTimeout(timer);if(sess){sess.done=true;sess=null;try{DICT.stop()}catch(e){}}}
-function finish(){
- if(!sess||sess.done)return;sess.done=true;clearTimeout(timer);clearTimeout(sess.sil);const cur=sess;
- Promise.resolve(DICT.stop()).catch(()=>{}).then(()=>{const ok=pass(cur.text+' '+cur.part,cur.target);sess=null;verdict(ok,(cur.text+' '+cur.part).trim())});
+function checkRec(s,r,g){
+ $('who').classList.remove('talk');
+ if(!r.heard)return unclear(s,'لم أسمع صوتك، اقترب من الجهاز وحاول مرة أخرى');
+ $('acts').innerHTML=`<div class="meter"><i style="animation-duration:8s"></i><span>نتحقق من قراءتك...</span></div>`;
+ const from=Math.min(...s.say)+1,to=Math.max(...s.say)+1,ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),200000);
+ fetch(`/api/evaluate?from=${from}&to=${to}&step=${teams[turn].pos+1}`,{method:'POST',headers:{'Content-Type':'audio/wav'},body:r.wav,signal:ctl.signal,cache:'no-store'})
+  .then(x=>x.ok?x.json():Promise.reject(x.status))
+  .then(res=>{clearTimeout(t);if(g===gen)result(s,res)})
+  .catch(()=>{clearTimeout(t);if(g===gen)unclear(s,'تعذّر الوصول إلى المصحّح الآن')});
 }
-function verdict(ok,heard=''){
- const who=$('who');if(!who)return;who.classList.remove('talk');
- const v=document.createElement('div');v.className='verdict '+(ok?'v-ok':'v-no');v.innerHTML=`<svg><use href="#${ok?'okS':'noS'}"/></svg><b>${ok?'صح':'خطأ'}</b>${heard?`<small>سمعت: ${heard.replace(/[<>&]/g,'')}</small>`:'<small>لم أسمع صوتًا</small>'}`;who.appendChild(v);
- if(ok)good();else{busy=true;T_miss();oops2();say('خطأ! نسمع الشيخ مرة أخرى','try');setTimeout(()=>{if(mode===2){turn=1-turn}ask()},2200)}
+function result(s,res){
+ if(!res.autoLights){ // calibration not approved yet: the teacher decides, the result goes to her panel
+  manualPhase(s,true,'المصحّح الآلي في وضع الاختبار؛ تحكم المعلمة. التفاصيل في لوحة المعلمة.');return}
+ if(res.light==='green'){verdict('ok');good();return}
+ if(res.light==='red'&&res.wrongWords&&res.wrongWords.length){verdict('no');fix(s,res);return}
+ unclear(s,res.unclear?'لم أسمعك جيدًا، ردّدها بصوت أوضح':'لم أتأكد من قراءتك، نحاول مرة أخرى');
+}
+function verdict(kind,small=''){
+ const who=$('who');if(!who)return;who.classList.remove('talk');who.querySelectorAll('.verdict').forEach(v=>v.remove());
+ const v=document.createElement('div');v.className='verdict '+{ok:'v-ok',no:'v-no',mid:'v-mid'}[kind];
+ v.innerHTML=`<svg><use href="#${kind==='ok'?'okS':kind==='no'?'noS':'micS'}"/></svg><b>${kind==='ok'?'صح':kind==='no'?'نصحّحها معًا':'لم أتأكد'}</b>${small?`<small>${esc(small)}</small>`:''}`;who.appendChild(v);
+}
+const ENC=['محاولة جميلة!','أنت قريب جدًا!','نتعلّمها معًا'];
+function fix(s,res){
+ teams[turn].miss++;oops2();
+ const ay=$('ay');ay.classList.remove('hid');
+ const isBad=w=>res.wrongWords.some(x=>x.verse==w.dataset.v&&x.word==w.dataset.w);
+ ay.querySelectorAll('.w').forEach(w=>w.classList.toggle('bad',isBad(w)));
+ const names=res.wrongWords.map(x=>x.text).filter(Boolean).slice(0,2);
+ say(`${ENC[Math.floor(Math.random()*ENC.length)]} ${names.length?'كلمة «'+names.join('» و«')+'» تحتاج تصحيحًا':''}`,'try');
+ const vs=[...new Set(res.wrongWords.map(x=>x.verse-1))].filter(k=>k>=0&&k<AY.length),seg=vs.length?vs:s.say,g=gen;
+ $('acts').innerHTML=`<button class="big b-listen pulse" id="lis"><svg><use href="#earS"/></svg><span>اسمع الشيخ</span></button>`;
+ const playFix=()=>{const b=$('lis');if(!b||g!==gen)return;b.disabled=true;b.classList.remove('pulse');b.querySelector('span').textContent='جاري التلاوة...';
+  $('who').querySelectorAll('.verdict').forEach(v=>v.remove());$('who').classList.remove('kid');$('fig').innerHTML='<use href="#sheikhS"/>';
+  playSeq(seg,()=>{if(g!==gen)return;
+   $('acts').innerHTML=`<button class="big b-again pulse" id="retry"><svg><use href="#agS"/></svg>حاول مرة أخرى</button><button class="small" id="rep">اسمع مرة أخرى</button>`;
+   $('retry').onclick=()=>{ay.querySelectorAll('.bad').forEach(w=>w.classList.remove('bad'));sayPhase()};
+   $('rep').onclick=()=>{$('acts').innerHTML=`<button class="big b-listen" id="lis" disabled><svg><use href="#earS"/></svg><span>جاري التلاوة...</span></button>`;playFix()}})};
+ $('lis').onclick=playFix;setTimeout(()=>{const b=$('lis');if(b&&!b.disabled&&g===gen)playFix()},1800);
+}
+function unclear(s,msg){
+ soft();verdict('mid',msg);say(msg,'try');
+ $('acts').innerHTML=`<button class="big b-say pulse" id="retry"><svg><use href="#micS"/></svg>حاول مرة أخرى</button><button class="small" id="man">تصحيح يدوي</button>`;
+ $('retry').onclick=()=>sayPhase();$('man').onclick=()=>{$('who').querySelectorAll('.verdict').forEach(v=>v.remove());manualPhase(s,true)};
 }
 function T_miss(){teams[turn].miss++}
 const oops2=()=>tone([[330,.18],[262,.18],[196,.35]]);
-function manualPhase(s){
- const need=Math.max(3,s.say.reduce((a,k)=>a+DUR[k],0)*.9);
+function manualPhase(s,done,note){
+ const need=done?0.05:Math.max(3,s.say.reduce((a,k)=>a+DUR[k],0)*.9);
  $('acts').innerHTML=`<div class="meter"><i id="bar" style="animation-duration:${need}s"></i><span id="mt">الطفل يقرأ الآن...</span></div>
  <div class="judge"><button class="big b-ok" id="ok" disabled aria-label="ردّدها صحيحًا"><svg><use href="#okS"/></svg>صح</button>
  <button class="big b-again" id="ag" aria-label="نحاول مرة أخرى"><svg><use href="#agS"/></svg>مرة أخرى</button></div>
  <p class="note center" id="jn">يُفتح زر «صح» بعد أن ينهي الطفل القراءة</p>`;
  const ok=$('ok');ok.onclick=good;$('ag').onclick=()=>{clearTimeout(timer);again()};
- timer=setTimeout(()=>{ok.disabled=false;ok.classList.add('pulse');$('mt').textContent='انتهى وقت القراءة';$('jn').textContent='تضغط المعلمة «صح» إذا ردّدها الطفل صحيحًا';$('who').classList.remove('talk')},need*1000);
+ timer=setTimeout(()=>{ok.disabled=false;ok.classList.add('pulse');$('mt').textContent='انتهى وقت القراءة';$('jn').textContent=note||'تضغط المعلمة «صح» إذا ردّدها الطفل صحيحًا';$('who').classList.remove('talk')},need*1000);
 }
 const PRAISE=['أحسنت! انطلق','ما شاء الله!','بطل! إلى الأمام','رائع جدًا!'];
 function say(t,c){const m=$('msg');m.textContent=t;m.className='msg '+c}
@@ -460,13 +497,13 @@ function drawSlots(){
 function micNote(t,ok){const n=$('micNote');n.hidden=false;n.textContent=t;n.className='micnote '+(ok?'ok':'no')}
 const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
 $('micBtn').onclick=()=>{
- if(!DICT){micNote(isIOS?'المايك غير متاح هنا. افتحي الرابط في Safari، وفعّلي «الإملاء» من الإعدادات ← عام ← لوحة المفاتيح.':'المايك غير متاح في هذا المتصفح. افتحي الرابط في Chrome.',false);return}
- micNote('اضغطي «سماح» عندما يطلب الجوال إذن المايك...',true);
- DICT.start({language:'ar'}).then(()=>{try{DICT.stop()}catch(e){}manualOnly=false;micNote('المايك جاهز! سيصحّح قراءة الطفل تلقائيًا.',true);$('micBtn').textContent='المايك جاهز'})
- .catch(e=>{const c=e&&e.code;manualOnly=true;
-  micNote(c==='not_granted'?'تم رفض إذن المايك. افتحي إعدادات المتصفح ← أذونات الموقع ← الميكروفون واختاري «سماح»، ثم أعيدي فتح اللعبة.':
-   c==='dismissed'?'أُغلق طلب الإذن. اضغطي «تفعيل المايك» مرة أخرى.':'تعذّر تشغيل المايك هنا. افتحي الرابط في Chrome (أندرويد) أو Safari (آيفون). سيبقى التصحيح يدويًا.',false);
-  if(c==='dismissed')manualOnly=false})};
+ if(!canRecord()){micNote(isIOS?'المايك غير متاح هنا. افتحي الرابط في Safari.':'المايك غير متاح في هذا المتصفح. افتحي الرابط في Chrome.',false);return}
+ micNote('اضغطي «سماح» عندما يطلب الجهاز إذن المايك...',true);
+ getMic().then(()=>{releaseMic();manualOnly=false;$('micBtn').textContent='المايك جاهز';
+  micNote(!CFG.serviceConfigured?'المايك جاهز، لكن مصحّح التلاوة غير مضبوط على الخادم بعد؛ سيبقى التصحيح يدويًا.':
+   CFG.autoLights?'المايك جاهز! يُرسل صوت الطفل إلى مصحّح التلاوة ثم يُحذف.':'المايك جاهز. المصحّح الآلي في وضع الاختبار حتى تعتمده المعلمة، والتصحيح الآن يدوي.',true)})
+ .catch(e=>{manualOnly=true;
+  micNote(e&&e.code==='not_granted'?'تم رفض إذن المايك. افتحي إعدادات المتصفح ← أذونات الموقع ← الميكروفون واختاري «سماح»، ثم أعيدي فتح اللعبة.':'تعذّر تشغيل المايك هنا. سيبقى التصحيح يدويًا.',false)})};
 $('setBtn').onclick=()=>{stopAudio();drawSlots();$('ov').classList.add('show')};
 $('closeOv').onclick=()=>{stopAudio();$('ov').classList.remove('show');if(!teams.length)home()};
 $('sndBtn').onclick=()=>{sound=!sound;const b=$('sndBtn');b.textContent='الأصوات: '+(sound?'تعمل':'مغلقة');b.setAttribute('aria-pressed',sound)};

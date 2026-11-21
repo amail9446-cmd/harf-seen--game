@@ -1,0 +1,10 @@
+{
+  "name": "quran-tasmee-al-asr",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node --test test/*.test.js"
+  }
+}

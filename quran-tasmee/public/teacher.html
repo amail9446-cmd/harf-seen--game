@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>لوحة المعلمة</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Baloo+Bhaijaan+2:wght@500;700;800&display=swap">
+<style>
+:root{color-scheme:light dark;--bg:light-dark(#fff8dc,#1c1838);--card:light-dark(#fffdf6,#2f2a5c);--ink:light-dark(#2b2118,#fff6e0);--line:light-dark(#f0d9a0,#463f80);
+--ok:#2fae5b;--no:#e0474c;--mid:#8a8f9c;--sky:#2b86e9;--muted:light-dark(#6b5f50,#c9c0e8)}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Baloo Bhaijaan 2",system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}
+h1{font-size:28px;margin:0 0 4px}h2{font-size:21px;margin:0 0 8px}
+.card{background:var(--card);border-radius:20px;padding:16px;box-shadow:0 5px 0 var(--line);margin:14px 0}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;border-radius:12px;padding:6px 16px;min-height:44px;background:var(--sky);color:#fff;font-weight:700}
+button.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+button[disabled]{opacity:.5;cursor:not-allowed}
+input[type=password],select{min-height:44px;border-radius:12px;border:2px solid var(--line);background:var(--bg);padding:4px 12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note{color:var(--muted);font-size:14px;margin:6px 0}
+.dot{display:inline-block;width:16px;height:16px;border-radius:50%;vertical-align:-3px;margin-inline-end:6px}
+.green{background:var(--ok)}.red{background:var(--no)}.neutral{background:var(--mid)}
+.pill{display:inline-block;padding:0 10px;border-radius:99px;font-size:14px;font-weight:700;color:#fff}
+.s-ok{background:var(--ok)}.s-error{background:var(--no)}.s-unknown{background:var(--mid)}.s-off{background:#bbb}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:6px;border-bottom:1px solid var(--line);text-align:start;vertical-align:top}
+.scroll{overflow-x:auto}
+.ar{font-family:Amiri,serif;font-size:19px}
+.codes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px 12px;font-size:14px}
+details{margin:6px 0}summary{cursor:pointer;font-weight:700}
+.warn{background:#fff1c2;color:#5a4300;border-radius:12px;padding:8px 12px}
+.bad{color:var(--no);font-weight:700}
+#rec.on{background:var(--no)}
+</style>
+</head>
+<body><main>
+<h1>لوحة المعلمة — مصحّح سورة العصر</h1>
+<p class="note">رواية حفص عن عاصم. التقييم من خدمة Nabr (qurani.ai). هذه اللوحة لا تحفظ أي تسجيل صوتي.</p>
+
+<section class="card" id="login">
+ <h2>الدخول</h2>
+ <div class="row"><input type="password" id="pin" placeholder="رمز المعلمة" autocomplete="current-password"><button id="go">دخول</button></div>
+ <p class="note" id="loginMsg"></p>
+</section>
+
+<div id="app" hidden>
+<section class="card">
+ <h2>الحالة</h2>
+ <div id="status"></div>
+</section>
+
+<section class="card">
+ <h2>ما الذي نقيّمه؟</h2>
+ <label><input type="checkbox" checked disabled> ١) صحة الكلمات وترتيبها وعدم حذفها (دائمًا)</label><br>
+ <label><input type="checkbox" id="aHarakat"> ٢) الحركات ونطق الحروف (letter_mistakes)</label><br>
+ <label><input type="checkbox" id="aTajweed"> ٣) أحكام التجويد (tajweed_mistakes)</label>
+ <p class="note">ملاحظة صادقة: الخدمة لا تفصل «مخارج الحروف» في قائمة مستقلة. أخطاء المخارج المتقاربة (مثل س/ص، ت/ط، ذ/ز) تأتي ضمن <b>letters_mismatch</b> في الجانب الثاني، مع أخطاء طول الحركة ونوعها. والوثائق تقول إن قواعد التجويد والنطق «قيد التقييم المستمر» وقد لا تُبلَّغ كل حالة.</p>
+ <details><summary>رموز التجويد المحتسبة</summary><div class="codes" id="tajCodes"></div></details>
+ <details><summary>رموز النطق والحركات المحتسبة</summary><div class="codes" id="phoCodes"></div></details>
+ <button id="saveSet">حفظ الإعدادات</button> <span class="note" id="setMsg"></span>
+</section>
+
+<section class="card">
+ <h2>اختبار المحرك قبل تفعيل الإضاءة</h2>
+ <p class="note">١) اختبار مرجعي: يرسل تلاوة الشيخ العفاسي (المتوقع أخضر) وتلاوات غير مطابقة عمدًا (المتوقع ليس أخضر). يستهلك رصيدًا من اشتراك Nabr.</p>
+ <button id="refBtn">تشغيل الاختبار المرجعي</button> <span class="note" id="refMsg"></span>
+ <div class="scroll" id="refOut"></div>
+ <p class="note" style="margin-top:14px">٢) تسجيل حقيقي بصوتك أو بصوت طفل (بإذن وليّ الأمر): اختاري الآية وهل القراءة ستكون صحيحة أم فيها خطأ مقصود، ثم سجّلي.</p>
+ <div class="row">
+  <select id="rng"><option value="1-1">الآية ١</option><option value="2-2">الآية ٢</option><option value="3-3">الآية ٣</option><option value="1-2">الآيتان ١–٢</option><option value="1-3">السورة كاملة</option></select>
+  <select id="exp"><option value="correct">قراءة صحيحة</option><option value="wrong">قراءة فيها خطأ مقصود</option></select>
+  <button id="rec">● تسجيل</button><span class="note" id="recMsg"></span>
+ </div>
+ <div id="sampleOut"></div>
+ <h2 style="margin-top:16px">سجل الاختبارات</h2>
+ <div class="scroll" id="calib"></div>
+ <button class="ghost" id="clearCal">مسح سجل الاختبارات</button>
+</section>
+
+<section class="card">
+ <h2>آخر محاولات الأطفال <button class="ghost" id="refresh">تحديث</button></h2>
+ <p class="note">تُحفظ في ذاكرة الخادم فقط (آخر ٥٠) دون صوت ودون أسماء، وتُمسح عند إعادة تشغيله.</p>
+ <div id="recent"></div>
+</section>
+</div>
+</main>
+<script>
+{
+const $=id=>document.getElementById(id);
+const esc=t=>String(t??'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const LIGHT={green:'أخضر',red:'أحمر',neutral:'محايد'},ST={ok:'سليم',error:'خطأ',unknown:'غير مؤكد',off:'غير مُقيَّم'};
+const ASP={words:'الكلمات والترتيب',harakat:'الحركات والنطق',tajweed:'التجويد'};
+let PIN='',STATE=null;
+try{PIN=sessionStorage.getItem('tpin')||''}catch(e){}
+const api=(p,o={})=>fetch('/api/teacher/'+p,{...o,cache:'no-store',headers:{...(o.headers||{}),'X-Teacher-Pin':PIN}}).then(async r=>{const b=await r.json().catch(()=>({}));if(r.status===401)throw new Error('pin');if(!r.ok&&r.status!==409)throw new Error(b.error||r.status);return Object.assign(b,{_status:r.status})});
+
+$('go').onclick=()=>{PIN=$('pin').value.trim();load().then(()=>{try{sessionStorage.setItem('tpin',PIN)}catch(e){}}).catch(e=>{$('loginMsg').textContent=e.message==='pin'?'الرمز غير صحيح أو لم يُضبط TEACHER_PIN على الخادم':'تعذّر الاتصال بالخادم'})};
+if(PIN)load().catch(()=>{});
+
+function load(){return api('state').then(s=>{STATE=s;$('login').hidden=true;$('app').hidden=false;render()})}
+function render(){
+ const s=STATE,g=s.gate,c=s.config;
+ $('status').innerHTML=`
+  <p>${c.nabrKey?'✅ مفتاح Nabr مضبوط على الخادم':'❌ مفتاح Nabr غير مضبوط (NABR_API_KEY)'}<br>
+  ${c.publicBaseUrl?'✅ عنوان الخادم العام: '+esc(c.publicBaseUrl):'❌ PUBLIC_BASE_URL غير مضبوط: لا تستطيع Nabr تنزيل تسجيلات الأطفال'}</p>
+  <p>الإضاءة التلقائية: <b>${s.settings.autoLights?'مفعّلة':'متوقفة (التصحيح يدوي في اللعبة)'}</b></p>
+  <p class="note">شرط التفعيل: ${esc(g.rule)}.<br>تسجيلات صحيحة أعطت أخضر: ${g.okGreen} · تسجيلات خاطئة أعطت أحمر: ${g.wrongRed} ·
+   <span class="${g.falseRed?'bad':''}">صحيحة أعطت أحمر (إنذار كاذب): ${g.falseRed}</span> · <span class="${g.missed?'bad':''}">خاطئة أعطت أخضر (خطأ فائت): ${g.missed}</span></p>
+  <div class="row"><button id="autoOn" ${g.passed&&!s.settings.autoLights?'':'disabled'}>تفعيل الإضاءة التلقائية</button>
+  <button class="ghost" id="autoOff" ${s.settings.autoLights?'':'disabled'}>إيقافها</button></div>
+  ${g.passed?'':'<p class="warn">لن تُفعَّل الإضاءة التلقائية قبل نجاح اختبار حقيقي بصوت مسجل.</p>'}`;
+ $('autoOn').onclick=()=>saveSettings({autoLights:true});$('autoOff').onclick=()=>saveSettings({autoLights:false});
+ $('aHarakat').checked=s.settings.aspects.harakat;$('aTajweed').checked=s.settings.aspects.tajweed;
+ const box=(id,codes,on)=>$(id).innerHTML=Object.entries(codes).map(([k,v])=>`<label><input type="checkbox" value="${k}" ${on.includes(k)?'checked':''}> ${esc(v)} <code>${k}</code></label>`).join('');
+ box('tajCodes',s.codes.tajweed,s.settings.tajweedCodes);box('phoCodes',s.codes.phonetic,s.settings.phoneticCodes);
+ $('calib').innerHTML=s.calibration.length?`<table><tr><th>الوقت</th><th>النوع</th><th>الآيات</th><th>المتوقع</th><th>النتيجة</th><th>السبب</th></tr>${s.calibration.map(e=>`<tr>
+  <td>${new Date(e.at).toLocaleString('ar')}</td><td>${e.source==='reference'?'مرجعي: '+esc(e.name):'تسجيل حقيقي'}</td><td>${e.range.from}–${e.range.to}</td>
+  <td>${e.expected==='correct'?'صحيح':'خطأ'}</td><td><span class="dot ${e.light}"></span>${LIGHT[e.light]}${mismatch(e)}</td><td>${esc(e.reason)}<details><summary>التفاصيل</summary>${detail(e.result)}</details></td></tr>`).join('')}</table>`:'<p class="note">لا توجد اختبارات بعد.</p>';
+ $('recent').innerHTML=s.recent.length?s.recent.map(r=>`<details class="card" style="margin:8px 0"><summary><span class="dot ${r.result.light}"></span>${LIGHT[r.result.light]} — الآيات ${r.result.range.from}–${r.result.range.to} — ${new Date(r.at).toLocaleTimeString('ar')} ${r.kind==='sample'?'(اختبار)':''}</summary>${detail(r.result)}</details>`).join(''):'<p class="note">لا محاولات بعد.</p>';
+}
+const mismatch=e=>(e.expected==='correct'&&e.light==='red')||(e.expected==='wrong'&&e.light==='green')?' <span class="bad">✗ لا يطابق المتوقع</span>':'';
+function detail(r){
+ if(!r)return'';
+ const W=STATE.words,word=(v,w)=>(W[v]||[])[w-1]||'';
+ const asp=Object.entries(r.aspects).map(([k,a])=>`<tr><td>${ASP[k]}</td><td><span class="pill s-${a.status}">${ST[a.status]}</span></td><td>${a.issues.length?a.issues.map(i=>`<div><span class="ar">${esc(i.text||word(i.verse,i.word))}</span> (آية ${i.verse}، كلمة ${i.word}) — <code>${esc(i.code||'بدون رمز')}</code> ${esc(i.message)}${i.heard?' — سُمع: <span class="ar">'+esc(i.heard)+'</span>':''}</div>`).join(''):'—'}</td></tr>`).join('');
+ const q=r.quality,sv=r.service;
+ return `<p><b>السبب:</b> ${esc(r.reason)}</p>
+ <table><tr><th>الجانب</th><th>الحالة</th><th>الأخطاء المكتشفة</th></tr>${asp}</table>
+ <p><b>مستوى الثقة:</b> ${esc(r.confidence)}</p>
+ <ul>
+  <li>اكتمال النتيجة: ${r.coverage.confirmed} من ${r.coverage.expected} كلمات مؤكدة، ${r.coverage.skipped} محذوفة، ${r.coverage.unaccounted} لم تُفحص</li>
+  ${sv?`<li>رمز الخدمة: ${sv.exit_code} (${esc(sv.exit_text)})${sv.audio_duration_ms!=null?' · مدة الصوت عند الخدمة: '+(sv.audio_duration_ms/1000).toFixed(1)+' ث':''}${sv.processing_ms?' · زمن المعالجة: '+(sv.processing_ms/1000).toFixed(1)+' ث':''}</li>`:''}
+  ${r.serviceError?`<li class="bad">خطأ الخدمة: ${esc(r.serviceError.kind)} ${esc(r.serviceError.status||'')} ${esc(r.serviceError.code||'')}</li>`:''}
+  ${q?`<li>جودة الصوت (قياس محلي): المدة ${(q.durationMs/1000).toFixed(1)} ث · صوت مسموع ${(q.voicedMs/1000).toFixed(1)} ث · المستوى ${q.rmsDb} dBFS · الذروة ${q.peakDb} dBFS · تشبّع ${(q.clippedRatio*100).toFixed(2)}٪</li>`:''}
+ </ul>`;
+}
+function saveSettings(extra){
+ const on=id=>[...$(id).querySelectorAll('input:checked')].map(i=>i.value);
+ const body={aspects:{harakat:$('aHarakat').checked,tajweed:$('aTajweed').checked},tajweedCodes:on('tajCodes'),phoneticCodes:on('phoCodes'),...extra};
+ return api('settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>{
+  $('setMsg').textContent=r._status===409?'لا يمكن التفعيل قبل نجاح الاختبار':'تم الحفظ';return load()}).catch(e=>$('setMsg').textContent='تعذّر الحفظ: '+e.message)}
+$('saveSet').onclick=()=>saveSettings({});
+$('refresh').onclick=()=>load();
+$('clearCal').onclick=()=>{if(confirm('مسح كل نتائج الاختبار؟ ستتوقف الإضاءة التلقائية.'))api('calibration',{method:'DELETE'}).then(load)};
+$('refBtn').onclick=()=>{const b=$('refBtn');b.disabled=true;$('refMsg').textContent='جارٍ الإرسال إلى الخدمة... قد يستغرق دقيقة';
+ api('reference',{method:'POST'}).then(r=>{$('refMsg').textContent='انتهى';
+  $('refOut').innerHTML=`<table><tr><th>الحالة</th><th>المتوقع</th><th>النتيجة</th><th>السبب</th></tr>${r.results.map(e=>`<tr><td>${esc(e.name)}</td><td>${e.expected==='correct'?'أخضر':'ليس أخضر'}</td><td><span class="dot ${e.light}"></span>${LIGHT[e.light]}${(e.expected==='correct'&&e.light!=='green')||(e.expected==='wrong'&&e.light==='green')?' <span class="bad">✗</span>':' ✓'}</td><td>${esc(e.reason)}</td></tr>`).join('')}</table>`;return load()})
+ .catch(e=>$('refMsg').textContent='فشل: '+e.message).finally(()=>b.disabled=false)};
+
+/* recording a labelled sample (16 kHz mono WAV, kept only in this tab's memory until sent) */
+let R=null;
+$('rec').onclick=async()=>{
+ if(R){R.stop();return}
+ let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}catch(e){$('recMsg').textContent='لا يوجد إذن للمايك';return}
+ const ctx=new AudioContext(),src=ctx.createMediaStreamSource(stream),proc=ctx.createScriptProcessor(4096,1,1),mute=ctx.createGain();mute.gain.value=0;
+ const chunks=[];let n=0;proc.onaudioprocess=e=>{const d=e.inputBuffer.getChannelData(0);chunks.push(new Float32Array(d));n+=d.length};
+ src.connect(proc);proc.connect(mute);mute.connect(ctx.destination);
+ $('rec').classList.add('on');$('rec').textContent='■ إيقاف';$('recMsg').textContent='يسجّل الآن...';
+ R={stop:async()=>{R=null;proc.disconnect();src.disconnect();stream.getTracks().forEach(t=>t.stop());const rate=ctx.sampleRate;await ctx.close();
+  $('rec').classList.remove('on');$('rec').textContent='● تسجيل';$('recMsg').textContent='يُرسل إلى الخدمة...';
+  const wav=toWav(chunks,n,rate),[from,to]=$('rng').value.split('-');
+  api(`sample?from=${from}&to=${to}&expected=${$('exp').value}`,{method:'POST',headers:{'Content-Type':'audio/wav'},body:wav})
+   .then(r=>{$('recMsg').textContent='';$('sampleOut').innerHTML=`<div class="card"><b><span class="dot ${r.entry.light}"></span>${LIGHT[r.entry.light]}</b>${mismatch(r.entry)}${detail(r.entry.result)}${r.entry.result.serviceError||r.entry.result.unclear?'<p class="warn">لم يُحتسب في الاختبار لأن الصوت غير واضح أو الخدمة غير متاحة.</p>':''}</div>`;return load()})
+   .catch(e=>$('recMsg').textContent='فشل: '+e.message)}};
+};
+function toWav(chunks,n,rate){
+ const all=new Float32Array(n);let o=0;chunks.forEach(c=>{all.set(c,o);o+=c.length});
+ const ratio=Math.max(1,rate/16000),len=Math.floor(n/ratio),buf=new ArrayBuffer(44+len*2),dv=new DataView(buf),pcm=new Int16Array(buf,44);
+ for(let i=0;i<len;i++){const a=Math.floor(i*ratio),b=Math.max(a+1,Math.min(n,Math.floor((i+1)*ratio)));let x=0;for(let j=a;j<b;j++)x+=all[j];const v=Math.max(-1,Math.min(1,x/(b-a)));pcm[i]=v<0?v*0x8000:v*0x7fff}
+ const w=(p,t)=>{for(let i=0;i<t.length;i++)dv.setUint8(p+i,t.charCodeAt(i))};
+ w(0,'RIFF');dv.setUint32(4,36+len*2,true);w(8,'WAVE');w(12,'fmt ');dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);dv.setUint32(24,16000,true);dv.setUint32(28,32000,true);dv.setUint16(32,2,true);dv.setUint16(34,16,true);w(36,'data');dv.setUint32(40,len*2,true);
+ all.fill(0);return new Blob([buf],{type:'audio/wav'})}
+}
+</script>
+</body></html>
